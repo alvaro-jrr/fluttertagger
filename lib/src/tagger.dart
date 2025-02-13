@@ -608,9 +608,14 @@ class _FlutterTaggerState extends State<FlutterTagger> {
     final length = controller.selection.base.offset - 1;
 
     for (int i = length; i >= 0; i--) {
+      final triggerIndex = text.lastIndexOf(_triggerCharactersPattern);
+      final completeTag = text.safeSubstring(triggerIndex + 1, i + 1);
+
       if ((i == length && triggerCharacters.contains(text[i])) ||
           !triggerCharacters.contains(text[i]) &&
-              !_searchRegexPattern.hasMatch(text[i])) {
+              !_searchRegexPattern.hasMatch(text[i]) &&
+              (completeTag == null ||
+                  !_searchRegexPattern.hasMatch(completeTag))) {
         return false;
       }
 
@@ -700,7 +705,11 @@ class _FlutterTaggerState extends State<FlutterTagger> {
     final oldCachedText = _lastCachedText;
 
     if (_shouldSearch && position >= 0) {
-      if (!_searchRegexPattern.hasMatch(text[position])) {
+      final triggerIndex = text.lastIndexOf(_triggerCharactersPattern);
+      final completeTag = text.safeSubstring(triggerIndex + 1, position + 1);
+
+      if (!_searchRegexPattern.hasMatch(text[position]) &&
+          (completeTag == null || !_searchRegexPattern.hasMatch(completeTag))) {
         _shouldSearch = false;
         _shouldHideOverlay(true);
       } else {
@@ -1334,4 +1343,12 @@ extension _RegExpExtension on RegExp {
 extension _StringExtension on String {
   List<String> splitWithDelim(RegExp pattern) =>
       pattern.allMatchesWithSep(this);
+
+  String? safeSubstring(int start, int end) {
+    try {
+      return substring(start, end);
+    } catch (_) {
+      return null;
+    }
+  }
 }
