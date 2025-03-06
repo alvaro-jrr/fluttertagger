@@ -660,9 +660,34 @@ class _FlutterTaggerState extends State<FlutterTagger> {
         ((text.trim().length < _lastCachedText.trim().length &&
                 _lastCursorPosition - 1 != currentCursorPosition) ||
             _lastCursorPosition + 1 != currentCursorPosition)) {
-      _shouldSearch = false;
-      _isBacktrackingToSearch = false;
-      _shouldHideOverlay(true);
+      bool isValidSearch = false;
+
+      // Validate if the search is still valid.
+      final textBeforeCursor = text.safeSubstring(0, currentCursorPosition);
+
+      if (textBeforeCursor != null) {
+        final lastTriggerIndex = textBeforeCursor.lastIndexOf(
+          RegExp(triggerCharacters.join('|')),
+        );
+
+        if (lastTriggerIndex != -1) {
+          final query = text.safeSubstring(
+            lastTriggerIndex + 1,
+            currentCursorPosition,
+          );
+
+          isValidSearch = query != null &&
+              query.isNotEmpty &&
+              _searchRegexPattern.hasMatch(query);
+        }
+      }
+
+      // If the search query is not valid, hide the overlay.
+      if (!isValidSearch) {
+        _shouldSearch = false;
+        _isBacktrackingToSearch = false;
+        _shouldHideOverlay(true);
+      }
     }
 
     if (_defer) {
